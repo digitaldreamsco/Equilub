@@ -1,0 +1,41 @@
+# Logs
+logs/*.txt
+*.log
+
+# Uploads (archivos subidos por usuarios)
+uploads/*
+!uploads/.gitkeep
+
+# Temporary files
+temp/*
+!temp/.gitkeep
+
+# Database debug files
+db_debug.txt
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# PHP
+*.tmp
+
+# Backup files
+*.bak
+*.backup
+
+# Cache
+cache/
+*.cache

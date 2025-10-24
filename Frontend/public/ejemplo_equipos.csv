@@ -1,0 +1,16 @@
+Nombre,Tipo,Estado,Categoria,Descripcion
+Bomba Centrífuga A1,equipment,Operativo,Bombas,Bomba principal del sistema de agua
+Motor Eléctrico M1,component,Operativo,Motores,Motor de 50HP para bomba A1
+Válvula Check V1,component,Mantenimiento,Válvulas,Válvula de retención principal
+Sensor de Presión S1,part,Operativo,Sensores,Sensor digital de presión
+Filtro de Agua F1,component,Operativo,Filtros,Filtro de sedimentos de 100 micras
+Controlador PLC C1,equipment,Operativo,Control,Controlador lógico programable
+Transformador T1,component,Operativo,Eléctrico,Transformador de 480V a 220V
+Caja de Conexiones CB1,part,Operativo,Eléctrico,Caja de distribución eléctrica
+Tanque de Almacenamiento TK1,equipment,Operativo,Tanques,Tanque de 5000 litros
+Medidor de Flujo FM1,component,Mantenimiento,Medición,Medidor electromagnético
+Tubería Principal P1,component,Operativo,Tuberías,Tubería de acero inoxidable 6 pulgadas
+Acoplamiento AC1,part,Operativo,Mecánico,Acoplamiento flexible motor-bomba
+Sistema de Control SC1,equipment,Operativo,Control,Sistema automatizado de control
+Variador de Frecuencia VF1,component,Operativo,Eléctrico,Variador para control de velocidad
+Intercambiador de Calor IC1,equipment,Mantenimiento,Térmico,Intercambiador de placas

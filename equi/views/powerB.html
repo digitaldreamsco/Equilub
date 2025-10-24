@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>DASHBOARD DE MANTENIMIENTO - PROGRAMA DE LUBRICACION LAMITECH 2025</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+  <link href="https://fonts.googleapis.com/css?family=Segoe+UI:400,700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      height: 100vh;
+      width: 100vw;
+      margin: 0;
+      padding: 0;
+      background: #e9ecf6;
+      color: #222;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      min-height: 100vh;
+      min-width: 100vw;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .dashboard-header {
+      background: #0d2053;
+      color: #fff;
+      font-size: 1.29em;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      padding: 18px 0 15px 0;
+      text-align: center;
+      border-radius: 0;
+      box-shadow: 0 2px 12px #0002;
+      margin: 0;
+      flex: 0 0 auto;
+      min-height: 56px;
+      z-index:2;
+    }
+    .dashboard-root {
+      flex: 1 1 0;
+      display: grid;
+      grid-template-areas:
+        "sidebar dynamicarea dynamicarea dynamicarea"
+        "sidebar dynamicarea dynamicarea dynamicarea"
+        "sidebar dynamicarea dynamicarea dynamicarea";
+      grid-template-columns: 310px 1fr 1fr 1fr;
+      grid-template-rows: 1.1fr 1.2fr 1.2fr;
+      gap: 2vw 1.5vw;
+      background: #e9ecf6;
+      box-sizing: border-box;
+      padding: 1vw 1vw 1vw 1vw;
+      width: 85%;
+      height: calc(100vh - 60px);
+      min-height: 0;
+      min-width: 0;
+      overflow: auto;
+    }
+    .sidebar-panel {
+      grid-area: sidebar;
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 14px #0001;
+      overflow: hidden;
+      z-index:1;
+    }
+    .dynamic-charts-area {
+      grid-area: dynamicarea;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2vw 1.5vw;
+      width: 100%;
+      height: 100%;
+      min-width: 0;
+      min-height: 0;
+      overflow: auto;
+    }
+    /* Draggable effect */
+    .draggable-panel {
+      cursor: move;
+      transition: box-shadow 0.18s;
+      user-select: none;
+    }
+    .draggable-panel.sortable-ghost {
+      opacity: 0.45;
+      box-shadow: 0 0 18px #0003;
+    }
+    .draggable-panel.sortable-chosen {
+      box-shadow: 0 0 22px #2578d7a0;
+    }
+    /* Panel common */
+    .panel {
+      min-width: 0;
+      min-height: 0;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border-radius: 15px;
+      box-shadow: 0 4px 14px #0001;
+      overflow: hidden;
+    }
+    .panel-header {
+      background: linear-gradient(90deg,#0d2053 70%,#133070 100%);
+      color: #fff;
+      border-radius: 15px 15px 0 0;
+      padding: 13px 22px 13px 22px;
+      font-weight: 700;
+      letter-spacing: .6px;
+      font-size:1.09em;
+      box-shadow: 0 3px 14px #0d205321;
+      flex: 0 0 auto;
+      min-height: 44px;
+      display: flex; align-items: center;
+      user-select: none;
+    }
+    .panel-content {
+      padding: 1.2vw 1vw 1vw 1vw;
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: stretch;
+      overflow: auto;
+    }
+    /* Chart areas by type */
+    .chart-area { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+    /* Pie grande y centrado */
+    .pie-panel .chart-area { min-height: 230px; }
+    .pie-panel canvas { width: 240px !important; height: 240px !important; max-width: 95% !important; max-height: 95% !important; }
+    /* Gauge principal */
+    .gauge-panel .chart-area { min-height: 120px; }
+    .gauge-panel canvas { width: 170px !important; height: 100px !important; max-width: 98% !important; }
+    .gauge-label { position:absolute;top:47%;left:50%;transform:translate(-50%,-50%); font-size:2em;color:#27ae60;font-weight:700; }
+    /* Mini gauges (monitoreo) */
+    .monitor-panel canvas { width: 75px !important; height: 75px !important; }
+    .monitor-panel .panel-content { gap:0; }
+    /* Barras principales */
+    .ind-program-panel .chart-area { min-height: 210px; }
+    .ind-program-panel canvas { width: 99% !important; height: 200px !important; }
+    /* Barras horizontales */
+    .lub-sistemas-panel .chart-area { min-height: 145px; }
+    .lub-sistemas-panel canvas { width: 99% !important; height: 140px !important; }
+    /* Líneas */
+    .consumo-panel .chart-area { min-height: 130px; }
+    .consumo-panel canvas { width: 99% !important; height: 120px !important; }
+    .panel-content.center, .panel-content > .center { text-align: center;}
+    .pie-legend { margin-top: 12px;}
+    .pie-legend span { display:inline-block; width:15px; height:15px; margin-right:5px; border-radius:3px;}
+    .equipos-falla-cards { display: flex; justify-content: space-evenly; gap: 2vw; margin-top:2vw;}
+    .falla-card {
+      background: #c0392b; color: #fff;
+      border-radius: 11px;
+      min-width: 120px; min-height: 60px;
+      padding: 1vw 1vw 0.7vw 1vw;
+      font-size: 1.2em; font-weight: 700;
+      box-shadow: 0 3px 16px #c0392b33;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      border: 3px solid #fff;
+    }
+    .falla-card .falla-title { font-size: 1.01em; font-weight: 600; }
+    .falla-card .falla-value { font-size: 1.44em; font-weight: 800; margin-top: 3px; }
+    .tree-filter {
+      background: linear-gradient(90deg,#0d2053 70%,#133070 100%);
+      color: #fff;
+      border-radius: 15px;
+      padding: 18px 12px 16px 13px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 14px #0001;
+      min-height: 230px;
+      display: flex; flex-direction: column;
+      align-items: stretch; justify-content: flex-start;
+    }
+    .tree-title { font-weight: 700; font-size: 1.09em; margin-bottom: 8px; letter-spacing:.2px;}
+    .tree-list { background: #fff; color: #333; border-radius: 11px; padding: 10px 12px 10px 12px; margin: 0; box-shadow: 0 1px 4px #0001;}
+    .tree-list label { display: flex; align-items: center; gap: 8px; font-size: 1.04em; margin-bottom:2px; font-weight:500;}
+    .tree-list input[type=checkbox] { accent-color: #0d2053;}
+    .file-upload {
+      padding: 14px 19px 8px 19px;
+      background: #fff;
+      border-radius: 0 0 13px 13px;
+      margin-bottom: 2px;
+      font-size: 1.06em;
+      font-weight: 500;
+    }
+    .file-upload input[type=file] { background: #fff; border-radius: 7px; border: 1px solid #eee; font-size: 1em;}
+    .tabla-equipos-panel .panel-content {padding:7px 7px 7px 7px;}
+    .table-equipos {
+      width: 100%; border-collapse: collapse; background: #f2f6fa; border-radius: 10px; overflow:hidden;
+      table-layout: fixed;
+    }
+    .table-equipos th { background: linear-gradient(90deg,#0d2053 70%,#133070 100%); color: #fff; font-weight: 700; font-size: 1em;}
+    .table-equipos th, .table-equipos td { padding: 6px 7px; border-bottom: 1px solid #e1e6ed; text-overflow:ellipsis; overflow: hidden; white-space:nowrap;}
+    .table-equipos td { font-size: 0.98em;}
+    .scroll-table { max-height: 156px; overflow-y: auto;}
+    tr:nth-child(even) td { background: #f6fafd;}
+    tr:hover td { background: #e3f0fd;}
+    @media (max-width: 1300px) {
+      .dashboard-root { 
+        grid-template-areas:
+          "sidebar dynamicarea dynamicarea dynamicarea"
+          "sidebar dynamicarea dynamicarea dynamicarea"
+          "sidebar dynamicarea dynamicarea dynamicarea";
+        grid-template-columns: 210px 1.4fr 1.2fr 1.1fr;
+        gap: 12px;
+      }
+      .dynamic-charts-area { gap: 12px; }
+      /* Reducir tamaño de texto para pantallas más pequeñas */
+      .falla-card .falla-title { font-size: 0.95em; }
+      .falla-card .falla-value { font-size: 1.3em; }
+      .panel-header { font-size: 1em; }
+    }
+    @media (max-width: 1050px) {
+      .dashboard-root { 
+        grid-template-areas:
+          "sidebar dynamicarea dynamicarea"
+          "sidebar dynamicarea dynamicarea"
+          "sidebar dynamicarea dynamicarea";
+        grid-template-columns: 175px 1.4fr 1.2fr;
+        grid-template-rows: 140px 220px 220px;
+        overflow-y: auto;
+      }
+      .dynamic-charts-area { 
+        grid-template-columns: 1fr 1fr; 
+        grid-template-rows: repeat(5, minmax(200px, auto));
+        overflow-y: auto;
+      }
+      /* Ajuste para textos largos */
+      .ind-program-panel div[style*="margin-top:7px"] span {
+        display: inline-block;
+        margin-bottom: 5px;
+      }
+    }
+    @media (max-width: 900px) {
+      .dashboard-root { 
+        grid-template-areas:
+          "sidebar"
+          "dynamicarea";
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        overflow-y: auto;
+      }
+      .dynamic-charts-area { 
+        grid-template-columns: 1fr; 
+        grid-template-rows: repeat(10, minmax(200px, auto));
+        overflow-y: auto;
+      }
+      /* Ajuste para las tarjetas de falla */
+      .equipos-falla-cards { 
+        flex-direction: column;
+        align-items: center;
+      }
+      .falla-card {
+        margin-bottom: 10px;
+        width: 80%;
+      }
+    }
+    /* Zoom effect for panels */
+    .zoomed-panel {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      width: 42.5vw !important; /* Reducido a la mitad (50% de 85vw) */
+      height: 42.5vh !important; /* Reducido a la mitad (50% de 85vh) */
+      max-width: 570px !important; /* Reducido a la mitad (50% de 1140px) */
+      max-height: 46.5vh !important; /* Reducido a la mitad (50% de 93vh) */
+      z-index: 9999 !important;
+      transform: translate(-50%, -50%) scale(0.92); /* Reducido a la mitad (50% de 1.05) */
+      box-shadow: 0 0 44px #0007, 0 0 0 9999px #2228;
+      transition: box-shadow 0.2s, transform 0.2s;
+      cursor: default !important;
+      overflow: auto;
+    }
+    .zoomed-panel .panel-header {
+      cursor: zoom-out !important;
+      position: relative;
+    }
+    .zoomed-panel .minimize-btn {
+      position: absolute;
+      top: 8px;
+      right: 14px;
+      background: #fff;
+      color: #0d2053;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 1.3em;
+      font-weight: bold;
+      box-shadow: 0 2px 8px #0002;
+      cursor: pointer;
+      z-index: 10001;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .zoomed-panel .minimize-btn:hover {
+      background: #e9ecf6;
+      color: #c0392b;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard-header">
+    DASHBOARD DE MANTENIMIENTO - PROGRAMA DE LUBRICACION LAMITECH 2025
+  </div>
+  <div class="dashboard-root">
+    <div class="sidebar-panel panel shadow">
+      <div class="tree-filter">
+        <div class="tree-title">Localización</div>
+        <div class="tree-list" id="treeLocalizaciones"></div>
+      </div>
+      <div class="file-upload">
+        <label style="color:#0d2053; font-weight:700;">Subir Excel:</label><br>
+        <input type="file" id="fileInput" accept=".xlsx,.xls"/>
+        <button id="uploadBtn" style="margin-top:10px;padding:5px 10px;background:#0d2053;color:white;border:none;border-radius:4px;cursor:pointer;display:block;width:100%;">Subir a Base de Datos</button>
+        
+        <div style="margin-top:15px;">
+          <label style="color:#0d2053; font-weight:700;">Seleccionar archivo guardado:</label>
+          <select id="savedFiles" style="margin-top:5px;padding:5px;width:100%;border:1px solid #ddd;border-radius:4px;">
+            <option value="">-- Seleccionar archivo --</option>
+          </select>
+          <button id="loadSavedBtn" style="margin-top:10px;padding:5px 10px;background:#1a7ccc;color:white;border:none;border-radius:4px;cursor:pointer;display:block;width:100%;">Cargar Datos</button>
+        </div>
+        
+        <div id="uploadStatus" style="margin-top:10px;font-size:0.9em;color:#27ae60;"></div>
+      </div>
+    </div>
+    <div class="dynamic-charts-area" id="dynamicChartsArea">
+      <div class="equipos-falla-panel panel draggable-panel" data-panel="falla">
+        <div class="panel-header">Equipos en falla</div>
+        <div class="panel-content">
+          <div class="equipos-falla-cards">
+            <div class="falla-card"><div class="falla-title">Termografía</div><div class="falla-value" id="termografiaCount"></div></div>
+            <div class="falla-card"><div class="falla-title">Vibraciones</div><div class="falla-value" id="vibracionesCount"></div></div>
+            <div class="falla-card"><div class="falla-title">Inspecciones</div><div class="falla-value" id="inspeccionesCount"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="gauge-panel panel draggable-panel" data-panel="gauge">
+        <div class="panel-header">Cumplimiento general de programa</div>
+        <div class="panel-content center">
+          <div class="chart-area">
+            <canvas id="cumplimientoGauge"></canvas>
+            <div class="gauge-label" id="cumplimientoGaugeLabel"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pie-panel panel draggable-panel" data-panel="pie">
+        <div class="panel-header">Lubricacion de planta</div>
+        <div class="panel-content center">
+          <div class="chart-area">
+            <canvas id="lubPie"></canvas>
+          </div>
+          <div class="pie-legend" id="pieLegend"></div>
+        </div>
+      </div>
+      <div class="monitor-panel panel draggable-panel" data-panel="monitor">
+        <div class="panel-header">Monitoreo predictivo</div>
+        <div class="panel-content center" style="padding-bottom:3px;">
+          <div style="display:flex;justify-content:space-around;">
+            <div>
+              <div style="font-weight:600;">Termografía</div>
+              <canvas id="termografiaGauge"></canvas>
+            </div>
+            <div>
+              <div style="font-weight:600;">Vibraciones</div>
+              <canvas id="vibracionesGauge"></canvas>
+            </div>
+          </div>
+          <div style="display:flex;justify-content:space-around; margin-top:6px;">
+            <div>
+              <div style="font-weight:600;">AAU</div>
+              <canvas id="aauGauge"></canvas>
+            </div>
+            <div>
+              <div style="font-weight:600;">Inspecciones</div>
+              <canvas id="inspeccionesGauge"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ind-program-panel panel draggable-panel" data-panel="indicadores">
+        <div class="panel-header">Indicadores de programación</div>
+        <div class="panel-content">
+          <div class="chart-area">
+            <canvas id="indicadoresBar"></canvas>
+          </div>
+          <div style="margin-top:7px;font-size:0.97em;">
+            <span style="color:#27ae60;font-weight:700;">● Ejecutadas</span>
+            <span style="color:#1a7ccc;font-weight:700;margin-left:13px;">● No programadas</span>
+            <span style="color:#c0392b;font-weight:700;margin-left:13px;">● Programadas</span>
+            <span style="color:#6c3483;font-weight:700;margin-left:13px;">— % No programadas</span>
+            <span style="color:#2e86c1;font-weight:700;margin-left:13px;">— % Cumpl. Prog</span>
+          </div>
+        </div>
+      </div>
+      <div class="tabla-equipos-panel panel draggable-panel" data-panel="tabla">
+        <div class="panel-header">NOMBRE DEL EQUIPO</div>
+        <div class="panel-content scroll-table">
+          <table class="table-equipos" id="equiposTable">
+            <thead>
+              <tr>
+                <th>NOMBRE DEL EQUIPO</th>
+                <th>Observaciones Ter</th>
+                <th>Observaciones Vibr</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lub-sistemas-panel panel draggable-panel" data-panel="sistemas">
+        <div class="panel-header">Estado de lubricacion por sistema</div>
+        <div class="panel-content">
+          <div class="chart-area">
+            <canvas id="sistBar"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="consumo-panel panel draggable-panel" data-panel="consumo">
+        <div class="panel-header">Consumo lubricantes</div>
+        <div class="panel-content">
+          <div class="chart-area">
+            <canvas id="consumoLine"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+<script>
+let rawData = {
+  matriz: [],
+  programa: [],
+  historico: [],
+  inspecciones: [],
+  term: [],
+  vibr: [],
+  aau: [],
+  lub: []
+}, filteredData = {
+  matriz: [],
+  programa: [],
+  historico: [],
+  inspecciones: [],
+  term: [],
+  vibr: [],
+  aau: [],
+  lub: []
+}, charts = {};
+
+function renderTreeFilter(dataLocs) {
+  let treeList = document.getElementById("treeLocalizaciones");
+  treeList.innerHTML = '';
+  // Usar datos de todas las hojas que tengan CODIGO LOCALIZACION
+  let locSets = [];
+  if (rawData.matriz.length) locSets.push(...rawData.matriz.map(r => r['CODIGO LOCALIZACION']).filter(Boolean));
+  if (rawData.inspecciones.length) locSets.push(...rawData.inspecciones.map(r => r['CODIGO LOCALIZACION']).filter(Boolean));
+  if (rawData.term.length) locSets.push(...rawData.term.map(r => r['CODIGO LOCALIZACION']).filter(Boolean));
+  if (rawData.vibr.length) locSets.push(...rawData.vibr.map(r => r['CODIGO LOCALIZACION']).filter(Boolean));
+  if (rawData.aau.length) locSets.push(...rawData.aau.map(r => r['CODIGO LOCALIZACION']).filter(Boolean));
+  
+  let locs = Array.from(new Set(locSets)).sort();
+  
+  locs.forEach(l => {
+    if (!l) return; // Saltamos valores vacíos
+    let id = "loc_" + btoa(String(l)).replace(/=/g,'');
+    let label = document.createElement("label");
+    label.innerHTML = `<input type="checkbox" value="${l}" id="${id}" onchange="onTreeLocChange()"> ${l}`;
+    treeList.appendChild(label);
+  });
+}
+
+function onTreeLocChange() { filterAndDisplay(); }
+
+// Agregar después de la inicialización de variables
+let selectedFileId = null;
+let serverConnected = false; // Nueva variable para control de estado
+
+// Cargar la lista de archivos guardados
+function loadSavedFiles() {
+  if (!serverConnected) {
+    console.warn('No se puede cargar la lista de archivos: sin conexión al servidor');
+    return;
+  }
+  
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = 'Cargando lista de archivos...';
+  statusEl.style.color = '#1a7ccc';
+  
+  fetch('list_files.php')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status} ${response.statusText}`);
+      }
+      
+      // Verificar que la respuesta es JSON válido
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('El servidor no devolvió JSON válido');
+      }
+      
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        const select = document.getElementById('savedFiles');
+        // Limpiar opciones excepto la primera
+        while (select.options.length > 1) {
+          select.remove(1);
+        }
+        
+        // Agregar nuevas opciones
+        data.files.forEach(file => {
+          const option = document.createElement('option');
+          option.value = file.id;
+          option.setAttribute('data-path', file.path);
+          option.textContent = file.name;
+          select.appendChild(option);
+        });
+        
+        if (data.files.length > 0) {
+          statusEl.textContent = `${data.files.length} archivos encontrados`;
+          statusEl.style.color = '#27ae60';
+        } else {
+          statusEl.textContent = 'No hay archivos guardados';
+          statusEl.style.color = '#666';
+        }
+      } else {
+        console.error('Error al cargar la lista de archivos:', data.error);
+        statusEl.textContent = 'Error: ' + data.error;
+        statusEl.style.color = '#c0392b';
+      }
+    })
+    .catch(error => {
+      console.error('Error al conectar con el servidor:', error);
+      statusEl.textContent = 'Error de conexión: ' + error.message;
+      statusEl.style.color = '#c0392b';
+    });
+}
+
+// Verificar la conexión al servidor
+function checkServerConnection() {
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = 'Verificando conexión al servidor...';
+  statusEl.style.color = '#1a7ccc';
+  
+  // Primero probar con un test básico
+  fetch('test.php')
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error de conexión: ${response.status} ${response.statusText}`);
+      }
+      
+      // Verificar que la respuesta es JSON válido
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('El servidor no está procesando PHP correctamente. Asegúrate de acceder a través de http://localhost/');
+      }
+      
+      return response.json();
+    })
+    .then(data => {
+      console.log("Test PHP exitoso:", data);
+      // Ahora verificar la conexión a la base de datos
+      return fetch('check_connection.php');
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Error de conexión: ${response.status} ${response.statusText}`);
+      }
+      
+      // Verificar que la respuesta es JSON válido
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('Error en check_connection.php - No devuelve JSON válido');
+      }
+      
+      return response.json();
+    })
+    .then(data => {
+      if (data.success) {
+        serverConnected = true;
+        statusEl.textContent = 'Conexión exitosa a la base de datos';
+        statusEl.style.color = '#27ae60';
+        
+        // Cargar la lista de archivos
+        loadSavedFiles();
+      } else {
+        serverConnected = false;
+        throw new Error(data.error || 'Error desconocido en la base de datos');
+      }
+    })
+    .catch(error => {
+      serverConnected = false;
+      statusEl.innerHTML = '<span style="color:#c0392b;">Error:</span> ' + error.message + 
+        '<br><br><strong>IMPORTANTE:</strong> Debes acceder a través de <code>http://localhost/equi/powerB.html</code> o similar. ' + 
+        'No puedes abrir los archivos directamente desde el explorador de archivos.';
+      statusEl.style.color = '#333';
+      console.error('Error de verificación:', error);
+      
+      // Deshabilitar controles que requieren conexión
+      document.getElementById('uploadBtn').disabled = true;
+      document.getElementById('loadSavedBtn').disabled = true;
+      document.getElementById('savedFiles').disabled = true;
+    });
+}
+
+// Cargar la lista de archivos al iniciar
+window.addEventListener('DOMContentLoaded', function() {
+  setupPanelZoomListeners();
+  checkServerConnection(); // Verificar conexión en lugar de cargar directamente
+});
+
+// Modificar el listener del archivo de entrada
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  
+  // Actualizar estado
+  document.getElementById('uploadStatus').textContent = 'Archivo seleccionado: ' + file.name;
+});
+
+// Agregar listener para el botón de subida
+document.getElementById('uploadBtn').addEventListener('click', function() {
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    alert('Por favor seleccione un archivo primero');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('excelFile', file);
+  
+  // Mostrar estado de carga
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = 'Subiendo archivo...';
+  statusEl.style.color = '#1a7ccc';
+  
+  fetch('upload.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.success) {
+      statusEl.textContent = 'Archivo subido correctamente. ID: ' + data.fileId;
+      statusEl.style.color = '#27ae60';
+      
+      // Recargar la lista de archivos
+      loadSavedFiles();
+      
+      // Procesar el archivo subido
+      parseExcel(file);
+    } else {
+      statusEl.textContent = 'Error: ' + data.error;
+      statusEl.style.color = '#c0392b';
+    }
+  })
+  .catch(error => {
+    statusEl.textContent = 'Error de conexión: ' + error.message;
+    statusEl.style.color = '#c0392b';
+    console.error('Error:', error);
+  });
+});
+
+// Listener para seleccionar archivo guardado
+document.getElementById('savedFiles').addEventListener('change', function() {
+  const select = this;
+  const selectedOption = select.options[select.selectedIndex];
+  
+  if (selectedOption.value) {
+    selectedFileId = selectedOption.value;
+    document.getElementById('uploadStatus').textContent = 'Archivo seleccionado: ' + selectedOption.textContent;
+    document.getElementById('uploadStatus').style.color = '#1a7ccc';
+  } else {
+    selectedFileId = null;
+  }
+});
+
+// Listener para cargar datos del archivo seleccionado
+document.getElementById('loadSavedBtn').addEventListener('click', function() {
+  if (!selectedFileId) {
+    alert('Por favor seleccione un archivo guardado');
+    return;
+  }
+  
+  const select = document.getElementById('savedFiles');
+  const selectedOption = select.options[select.selectedIndex];
+  const filePath = selectedOption.getAttribute('data-path');
+  
+  // Mostrar estado de carga
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.textContent = 'Cargando datos...';
+  statusEl.style.color = '#1a7ccc';
+  
+  // Cargar el archivo desde el servidor
+  fetch(filePath)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('No se pudo cargar el archivo');
+      }
+      return response.arrayBuffer();
+    })
+    .then(arrayBuffer => {
+      // Procesar el archivo Excel cargado
+      try {
+        const data = new Uint8Array(arrayBuffer);
+        const workbook = XLSX.read(data, {type: 'array'});
+        
+        // Utilizar la función existente para procesar el Excel
+        processExcelWorkbook(workbook);
+        
+        statusEl.textContent = 'Datos cargados correctamente';
+        statusEl.style.color = '#27ae60';
+      } catch (error) {
+        statusEl.textContent = 'Error al procesar el archivo: ' + error.message;
+        statusEl.style.color = '#c0392b';
+        console.error('Error al procesar el archivo:', error);
+      }
+    })
+    .catch(error => {
+      statusEl.textContent = 'Error: ' + error.message;
+      statusEl.style.color = '#c0392b';
+      console.error('Error:', error);
+    });
+});
+
+// Extraer la lógica de procesamiento del Excel a una función separada
+function processExcelWorkbook(workbook) {
+  // Mapear nombres de hojas esperados a nombres de estructura (case insensitive)
+  const sheetMapping = {
+    'matriz': 'matriz',
+    'program': 'programa',
+    'historic': 'historico',
+    'inspeccion': 'inspecciones',
+    'term': 'term',
+    'vibr': 'vibr',
+    'aau': 'aau',
+    'lub': 'lub'
+  };
+  
+  // Inicializar datos vacíos
+  Object.keys(rawData).forEach(key => {
+    rawData[key] = [];
+  });
+  
+  // Crear mapa de coincidencia por nombre parcial
+  const sheetNames = workbook.SheetNames;
+  console.log("Hojas disponibles en el Excel:", sheetNames);
+  
+  // Crear una alerta en la interfaz para mostrar hojas cargadas
+  let alertDiv = document.createElement("div");
+  alertDiv.style.cssText = "position:fixed;top:70px;right:20px;background:#fff;border:2px solid #0d2053;border-radius:8px;padding:10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1000;max-width:350px;";
+  alertDiv.innerHTML = "<p style='margin:0;font-weight:bold;color:#0d2053;'>Hojas detectadas:</p>";
+  
+  // Buscar coincidencias parciales para cada hoja
+  let hojasCoincidentes = [];
+  
+  sheetNames.forEach(name => {
+    // Buscar una coincidencia parcial en los nombres de hojas esperados
+    const nameLower = name.toLowerCase();
+    let mappedKey = null;
+    
+    // Verificar coincidencias exactas o parciales
+    Object.keys(sheetMapping).forEach(key => {
+      if (nameLower.includes(key.toLowerCase())) {
+        mappedKey = sheetMapping[key];
+        hojasCoincidentes.push(name);
+      }
+    });
+    
+    if (mappedKey) {
+      const ws = workbook.Sheets[name];
+      try {
+        rawData[mappedKey] = XLSX.utils.sheet_to_json(ws, {defval: ""});
+        console.log(`✓ Cargados ${rawData[mappedKey].length} registros de la hoja "${name}" como "${mappedKey}"`);
+        alertDiv.innerHTML += `<p style='margin:2px 0;color:green;'>✓ ${name}: ${rawData[mappedKey].length} registros</p>`;
+        
+        // Mostrar ejemplo de los primeros registros
+        if (rawData[mappedKey].length > 0) {
+          console.log(`Ejemplo de datos en ${name}:`, rawData[mappedKey][0]);
+          // Mostrar columnas disponibles
+          console.log(`Columnas en ${name}:`, Object.keys(rawData[mappedKey][0]));
+        }
+      } catch (err) {
+        console.error(`Error al procesar la hoja "${name}":`, err);
+        alertDiv.innerHTML += `<p style='margin:2px 0;color:red;'>✗ Error en ${name}: ${err.message}</p>`;
+      }
+    } else {
+      console.log(`⚠️ Hoja "${name}" no reconocida o no utilizada`);
+      alertDiv.innerHTML += `<p style='margin:2px 0;color:orange;'>⚠️ ${name}: No utilizada</p>`;
+    }
+  });
+  
+  // Mostrar advertencia si faltan hojas esenciales
+  const hojasEsenciales = ['matriz', 'programa', 'term', 'vibr', 'aau', 'inspecciones'];
+  const hojasFaltantes = hojasEsenciales.filter(h => 
+    !hojasCoincidentes.some(hc => hc.toLowerCase().includes(h.toLowerCase()))
+  );
+  
+  if (hojasFaltantes.length > 0) {
+    console.warn("⚠️ Faltan hojas importantes:", hojasFaltantes);
+    alertDiv.innerHTML += `<p style='margin:5px 0;font-weight:bold;color:red;'>⚠️ Faltan hojas: ${hojasFaltantes.join(', ')}</p>`;
+  }
+  
+  // Agregar botón para cerrar la alerta
+  alertDiv.innerHTML += "<button style='margin-top:8px;padding:4px 8px;background:#0d2053;color:white;border:none;border-radius:4px;cursor:pointer;float:right;'>Cerrar</button>";
+  document.body.appendChild(alertDiv);
+  alertDiv.querySelector('button').onclick = () => alertDiv.remove();
+  
+  // Auto-cerrar después de 10 segundos
+  setTimeout(() => {
+    if (document.body.contains(alertDiv)) {
+      alertDiv.remove();
+    }
+  }, 10000);
+  
+  // Mostrar resumen de datos cargados
+  console.log("Resumen de datos cargados:", {
+    matriz: rawData.matriz.length,
+    programa: rawData.programa.length,
+    historico: rawData.historico.length,
+    inspecciones: rawData.inspecciones.length,
+    term: rawData.term.length,
+    vibr: rawData.vibr.length,
+    aau: rawData.aau.length,
+    lub: rawData.lub.length
+  });
+  
+  renderTreeFilter(rawData);
+  filterAndDisplay(); // Esto procesará los datos una sola vez
+  
+  // Evitamos las llamadas recursivas
+  setTimeout(() => {
+    // Solo ajustar tamaños, sin actualizar datos
+    document.querySelectorAll('.panel-content').forEach(panel => {
+      if (panel.scrollHeight > panel.clientHeight) {
+        panel.style.overflowY = 'auto';
+      }
+    });
+  }, 300);
+}
+
+// Modificar la función parseExcel para usar la nueva función processExcelWorkbook
+function parseExcel(file) {
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, {type: 'array'});
+      
+      // Usar la función de procesamiento
+      processExcelWorkbook(workbook);
+    } catch (error) {
+      console.error("Error al procesar el archivo Excel:", error);
+      alert("Error al procesar el archivo Excel: " + error.message);
+    }
+  };
+  reader.onerror = function(ex) {
+    console.error("Error al leer el archivo:", ex);
+    alert("Error al leer el archivo: " + ex.message);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Cargar la lista de archivos al iniciar
+window.addEventListener('DOMContentLoaded', function() {
+  setupPanelZoomListeners();
+  checkServerConnection(); // Verificar conexión en lugar de cargar directamente
+});
+
+function getSelectedLocs() {
+  let cbs = document.querySelectorAll('.tree-list input[type=checkbox]');
+  let sel = [];
+  cbs.forEach(cb => { if(cb.checked) sel.push(cb.value); });
+  return sel;
+}
+
+function filterAndDisplay() {
+  let locs = getSelectedLocs();
+  
+  // Filtrar cada conjunto de datos por la localización seleccionada
+  Object.keys(rawData).forEach(key => {
+    if (rawData[key].length) {
+      filteredData[key] = !locs.length ? [...rawData[key]] : 
+        rawData[key].filter(r => {
+          // Solo filtrar si la hoja tiene el campo de localización
+          return !r['CODIGO LOCALIZACION'] || locs.includes(r['CODIGO LOCALIZACION']);
+        });
+    } else {
+      filteredData[key] = [];
+    }
+  });
+  
+  // Procesar y mostrar los datos filtrados
+  updateWidgets(filteredData);
+  
+  // Esperar un momento y luego solo ajustar tamaños sin actualizar datos de nuevo
+  setTimeout(() => {
+    // Aquí NO llamamos a updateWidgets nuevamente
+    document.querySelectorAll('.panel-content').forEach(panel => {
+      if (panel.scrollHeight > panel.clientHeight) {
+        panel.style.overflowY = 'auto';
+      }
+    });
+    
+    // Redimensionar los gráficos existentes
+    for (const key in charts) {
+      if (charts[key]) {
+        try {
+          charts[key].resize();
+        } catch (e) {
+          // Ignorar errores de redimensionamiento
+        }
+      }
+    }
+    
+    // Restaurar la funcionalidad de arrastre y zoom
+    setupDragAndZoom();
+  }, 150);
+}
+
+// Función para asegurar que el arrastre y zoom funcionen
+function setupDragAndZoom() {
+  // Inicializar sortable para permitir arrastrar paneles
+  if (window.sortableInstance) {
+    window.sortableInstance.destroy();
+  }
+  
+  window.sortableInstance = new Sortable(document.getElementById('dynamicChartsArea'), {
+    animation: 190,
+    handle: '.panel-header',
+    draggable: '.draggable-panel',
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    forceFallback: true,
+    onStart: function(evt) {
+      // Si el panel está en zoom, cancela el drag
+      if (evt.item.classList.contains('zoomed-panel')) {
+        evt.preventDefault();
+        return false;
+      }
+    },
+    onEnd: function() {
+      setupPanelZoomListeners();
+    }
+  });
+  
+  // Asegurar que el doble clic para zoom funcione
+  setupPanelZoomListeners();
+}
+
+function getCanvasSize(parent) {
+  const w = parent.clientWidth || 400;
+  const h = parent.clientHeight || 200;
+  return [Math.max(w*0.97, 220), Math.max(h*0.89, 160)];
+}
+
+function updateWidgets(data) {
+  console.log("Actualizando widgets con datos filtrados:", {
+    matriz: data.matriz.length,
+    programa: data.programa.length,
+    historico: data.historico.length,
+    inspecciones: data.inspecciones.length,
+    term: data.term.length,
+    vibr: data.vibr.length,
+    aau: data.aau.length,
+    lub: data.lub.length
+  });
+
+  // Equipos en falla
+  // Term, estado TERM
+  const termCount = data.term.filter(r => (r['ESTADO TERM'] || '').toUpperCase() === 'BACKLOG').length;
+  document.getElementById('termografiaCount').textContent = termCount || '';
+  console.log("Termografía en BACKLOG:", termCount, "de", data.term.length);
+  
+  // Mostrar ejemplos de los datos para diagnosticar
+  if (data.term.length > 0) {
+    console.log("Muestra de ESTADO TERM:", data.term.slice(0, 5).map(r => r['ESTADO TERM']));
+  }
+
+  // Vibr, estado VIBR
+  const vibrCount = data.vibr.filter(r => (r['ESTADO VIBR'] || '').toUpperCase() === 'BACKLOG').length;
+  document.getElementById('vibracionesCount').textContent = vibrCount || '';
+  console.log("Vibraciones en BACKLOG:", vibrCount, "de", data.vibr.length);
+  
+  // Mostrar ejemplos de los datos para diagnosticar
+  if (data.vibr.length > 0) {
+    console.log("Muestra de ESTADO VIBR:", data.vibr.slice(0, 5).map(r => r['ESTADO VIBR']));
+  }
+
+  // Inspecciones, estado
+  const inspCount = data.inspecciones.filter(r => (r['ESTADO'] || '').toUpperCase() === 'BACKLOG').length;
+  document.getElementById('inspeccionesCount').textContent = inspCount || '';
+  console.log("Inspecciones en BACKLOG:", inspCount, "de", data.inspecciones.length);
+  
+  // Mostrar ejemplos de los datos para diagnosticar
+  if (data.inspecciones.length > 0) {
+    console.log("Muestra de ESTADO en inspecciones:", data.inspecciones.slice(0, 5).map(r => r['ESTADO']));
+  }
+  
+  // Cumplimiento general de programa
+  let cumplimiento = 0;
+  if (data.programa.length) {
+    console.log("Calculando promedio de % CUMPL en hoja programa...");
+    
+    // Mostrar todos los valores para diagnóstico
+    const valoresCumpl = data.programa.map(r => {
+      // Convertir de formato español (coma) a formato internacional (punto)
+      const valorStr = (r['% CUMPL'] || '').toString().replace(',', '.').replace('%', '');
+      const valor = parseFloat(valorStr);
+      return isNaN(valor) ? null : valor;
+    }).filter(v => v !== null);
+    
+    console.log("Valores de % CUMPL encontrados:", valoresCumpl);
+    
+    // Calcular el promedio solo con valores válidos
+    if (valoresCumpl.length > 0) {
+      const cumplSum = valoresCumpl.reduce((sum, val) => sum + val, 0);
+      cumplimiento = cumplSum / valoresCumpl.length;
+      console.log(`Suma total: ${cumplSum.toFixed(2)}, Cantidad de valores: ${valoresCumpl.length}`);
+      console.log(`Promedio calculado: ${cumplimiento.toFixed(2)}%`);
+    } else {
+      console.warn("No se encontraron valores numéricos válidos en la columna % CUMPL");
+    }
+  }
+  
+  drawGauge('cumplimientoGauge', cumplimiento, '#27ae60');
+  document.getElementById('cumplimientoGaugeLabel').textContent = 
+    (cumplimiento ? cumplimiento.toFixed(2) + '%' : '--');
+  
+  // Lubricación de planta (de matriz, columna ESTADO)
+  let ejecutado = 0, backlog = 0, fs = 0;
+  if (data.matriz.length) {
+    ejecutado = data.matriz.filter(r => (r['ESTADO'] || '').toUpperCase() === 'EJECUTADO').length;
+    backlog = data.matriz.filter(r => (r['ESTADO'] || '').toUpperCase() === 'BACKLOG').length;
+    fs = data.matriz.filter(r => (r['ESTADO'] || '').toUpperCase() === 'FS').length;
+  }
+  
+  console.log("Lubricación de planta:", {
+    EJECUTADO: ejecutado,
+    BACKLOG: backlog,
+    FS: fs,
+    total: data.matriz.length
+  });
+  
+  drawPie('lubPie', [ejecutado, backlog, fs], ['#27ae60','#c0392b','#343a40'], 
+          ['EJECUTADO','BACKLOG','FS'], 'pieLegend');
+  
+  // Monitoreo predictivo
+  console.log("Monitoreo predictivo - datos por fuente:");
+  console.log("- Term:", data.term.length, "registros");
+  console.log("- Vibr:", data.vibr.length, "registros");
+  console.log("- AAU:", data.aau.length, "registros");
+  console.log("- Inspecciones:", data.inspecciones.length, "registros");
+  
+  // Verificar y mostrar los valores de estado
+  if (data.term.length > 0) {
+    const estadosUnicos = [...new Set(data.term.map(r => r['ESTADO TERM']))].filter(Boolean);
+    console.log("Estados únicos en Term:", estadosUnicos);
+  }
+  if (data.vibr.length > 0) {
+    const estadosUnicos = [...new Set(data.vibr.map(r => r['ESTADO VIBR']))].filter(Boolean);
+    console.log("Estados únicos en Vibr:", estadosUnicos);
+  }
+  if (data.aau.length > 0) {
+    const estadosUnicos = [...new Set(data.aau.map(r => r['ESTADO AAU']))].filter(Boolean);
+    console.log("Estados únicos en AAU:", estadosUnicos);
+  }
+  if (data.inspecciones.length > 0) {
+    const estadosUnicos = [...new Set(data.inspecciones.map(r => r['ESTADO']))].filter(Boolean);
+    console.log("Estados únicos en Inspecciones:", estadosUnicos);
+  }
+  
+  drawMiniGauge('termografiaGauge', data.term, 'ESTADO TERM', 'EJECUTADO');
+  drawMiniGauge('vibracionesGauge', data.vibr, 'ESTADO VIBR', 'EJECUTADO');
+  drawMiniGauge('aauGauge', data.aau, 'ESTADO AAU', 'EJECUTADO');
+  drawMiniGauge('inspeccionesGauge', data.inspecciones, 'ESTADO', 'EJECUTADO');
+  
+  // Indicadores de programación
+  let semanas = {};
+  if (data.programa.length) {
+    data.programa.forEach(r => {
+      let sem = r['SEMANA'] || '';
+      if (!sem) return;
+      semanas[sem] = {
+        EJECUTADAS: parseFloat(r['ACT. EJEC']) || 0,
+        NOPROG: parseFloat(r['ACT. NO PROG']) || 0,
+        PROG: parseFloat(r['ACT. PROG']) || 0,
+        Cumpl: parseFloat(r['% CUMPL']) || 0,
+        NoProg: parseFloat(r['% NO PROG']) || 0
+      };
+    });
+  }
+  
+  let semanaKeys = Object.keys(semanas).sort((a,b) => parseInt(a) - parseInt(b));
+  console.log("Indicadores de programación por semana:", semanas);
+  console.log("Semanas disponibles:", semanaKeys);
+  
+  drawBarIndicadores(semanaKeys, semanas);
+  
+  // Estado de lubricación por sistema
+  let sistemas = {};
+  if (data.matriz.length) {
+    data.matriz.forEach(r => {
+      let sist = r['RUTA LUB'] || '';
+      let est = (r['ESTADO'] || '').toUpperCase();
+      if (!sist) return;
+      if (!sistemas[sist]) sistemas[sist] = {BACKLOG: 0, EJECUTADO: 0, FS: 0};
+      if (est === 'BACKLOG') sistemas[sist].BACKLOG++;
+      if (est === 'EJECUTADO') sistemas[sist].EJECUTADO++;
+      if (est === 'FS') sistemas[sist].FS++;
+    });
+  }
+  
+  let sistLabels = Object.keys(sistemas);
+  console.log("Lubricación por sistema:", sistemas);
+  console.log("Sistemas disponibles:", sistLabels);
+  
+  drawSistBar(sistLabels, sistemas);
+  
+  // Consumo lubricantes (de la hoja Lub)
+  let mesesConsumo = [];
+  let aceiteData = [];
+  let grasaData = [];
+  
+  if (data.lub.length) {
+    mesesConsumo = data.lub.map(r => r['MES'] || '').filter(Boolean);
+    aceiteData = data.lub.map(r => parseFloat(r['ACEITE (L)']) || 0);
+    grasaData = data.lub.map(r => parseFloat(r['GRASA (Kg)']) || 0);
+  }
+  
+  console.log("Consumo de lubricantes:", {
+    meses: mesesConsumo,
+    aceite: aceiteData,
+    grasa: grasaData,
+    datosOriginales: data.lub.slice(0, 3)
+  });
+  
+  drawConsumoLine(mesesConsumo, aceiteData, grasaData);
+  
+  // Tabla de equipos
+  let eqTable = document.querySelector('#equiposTable tbody');
+  eqTable.innerHTML = '';
+  
+  // Combinar datos de term y vibr
+  let equiposData = [];
+  if (data.term.length || data.vibr.length) {
+    // Crear un mapa de equipos usando CODIGO LOCALIZACION como clave
+    let equiposMap = new Map();
+    
+    // Procesar datos de term
+    data.term.forEach(r => {
+      const codigo = r['CODIGO LOCALIZACION'];
+      const nombre = r['NOMBRE DEL EQUIPO'];
+      const obsTer = r['Observaciones Ter'] || '';
+      
+      if (codigo && nombre) {
+        equiposMap.set(codigo, {
+          nombre,
+          obsTer,
+          obsVibr: '' // Se llenará con datos de vibr si existe
+        });
+      }
+    });
+    
+    // Procesar datos de vibr
+    data.vibr.forEach(r => {
+      const codigo = r['CODIGO LOCALIZACION'];
+      const nombre = r['NOMBRE DEL EQUIPO'];
+      const obsVibr = r['Observaciones Vibr'] || '';
+      
+      if (codigo && nombre) {
+        if (equiposMap.has(codigo)) {
+          // Actualizar registro existente
+          const equipo = equiposMap.get(codigo);
+          equipo.obsVibr = obsVibr;
+        } else {
+          // Crear nuevo registro
+          equiposMap.set(codigo, {
+            nombre,
+            obsTer: '',
+            obsVibr
+          });
+        }
+      }
+    });
+    
+    // Convertir mapa a array
+    equiposData = Array.from(equiposMap.values());
+  }
+  
+  // Mostrar los primeros 12 equipos
+  equiposData.slice(0, 12).forEach(eq => {
+    let tr = document.createElement('tr');
+    tr.innerHTML = `<td>${eq.nombre || '--'}</td>
+      <td>${eq.obsTer || ''}</td>
+      <td>${eq.obsVibr || ''}</td>`;
+    eqTable.appendChild(tr);
+  });
+  
+  setTimeout(resizeCharts, 100);
+}
+
+// Modificar función drawMiniGauge para usar los campos específicos
+function drawMiniGauge(canvasId, data, estadoField, ejecutadoValue) {
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const canvas = document.getElementById(canvasId);
+  canvas.width = 75; canvas.height = 75;
+  
+  if (!data || !data.length) { 
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); 
+    console.log(`Mini gauge ${canvasId}: No hay datos disponibles`);
+    return; 
+  }
+  
+  let total = data.length;
+  let ejecutado = data.filter(r => (r[estadoField] || '').toUpperCase() === ejecutadoValue).length;
+  let percent = total ? (ejecutado / total * 100) : 0;
+  
+  console.log(`Mini gauge ${canvasId}: ${ejecutado}/${total} (${percent.toFixed(2)}%) con estado ${estadoField}=${ejecutadoValue}`);
+  
+  charts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {datasets: [{ data: [percent, 100-percent], backgroundColor: ['#27ae60', '#e0e0e0']}], labels:['OC','EF']},
+    options: {responsive:false, rotation: -90, circumference: 180, cutout: "80%", plugins: {legend:{display:false}}, tooltips:{enabled:false}}
+  });
+}
+function drawPie(canvasId, data, colors, labels, legendId) {
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const canvas = document.getElementById(canvasId);
+  const parent = canvas.parentElement;
+  let [w, h] = getCanvasSize(parent);
+  canvas.width = 240;
+  canvas.height = 240;
+  if (!data.some(v => v)) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); if(legendId) document.getElementById(legendId).innerHTML=''; return; }
+  charts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'pie',
+    data: { datasets: [{ data: data, backgroundColor: colors }], labels: labels },
+    options: {responsive: false, plugins: { legend: { display: false } } }
+  });
+  if(legendId) {
+    let legend = '';
+    labels.forEach((l,i) => {
+      legend += `<span style="background:${colors[i]}"></span> ${l} `;
+    });
+    document.getElementById(legendId).innerHTML = legend;
+  }
+}
+function drawGauge(canvasId, percent, color) {
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const canvas = document.getElementById(canvasId);
+  canvas.width = 170; canvas.height = 100;
+  if (!percent) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+  charts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {datasets: [{ data: [percent, 100-percent], backgroundColor: [color, '#e0e0e0']}], labels:['Cumplido','Pendiente']},
+    options: {responsive: false, rotation: -90, circumference: 180, cutout: "70%", plugins: {legend:{display:false}}, tooltips:{enabled:false}}
+  });
+}
+function drawMiniGauge(canvasId, data, keyword) {
+  if(charts[canvasId]) charts[canvasId].destroy();
+  const canvas = document.getElementById(canvasId);
+  canvas.width = 75; canvas.height = 75;
+  let total = data.length ? data.filter(r => (r['TAREA']||'').toUpperCase().includes(keyword)).length : 0;
+  let ejecutado = data.length ? data.filter(r => (r['TAREA']||'').toUpperCase().includes(keyword) && (r['ESTADO']||'').toUpperCase()==='EJECUTADO').length : 0;
+  let percent = total ? ejecutado/total*100 : 0;
+  if (!total) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+  charts[canvasId] = new Chart(canvas.getContext('2d'), {
+    type: 'doughnut',
+    data: {datasets: [{ data: [percent, 100-percent], backgroundColor: ['#27ae60', '#e0e0e0']}], labels:['OC','EF']},
+    options: {responsive:false, rotation: -90, circumference: 180, cutout: "80%", plugins: {legend:{display:false}}, tooltips:{enabled:false}}
+  });
+}
+function drawBarIndicadores(semanas, semanasData) {
+  if(charts['indicadoresBar']) charts['indicadoresBar'].destroy();
+  const canvas = document.getElementById('indicadoresBar');
+  const parent = canvas.parentElement;
+  let [w, h] = getCanvasSize(parent);
+  canvas.width = w; canvas.height = 200;
+  if (!semanas.length) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+  charts['indicadoresBar'] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: semanas,
+      datasets: [
+        {label:'Ejecutadas', data: semanas.map(s=>semanasData[s].EJECUTADAS), backgroundColor:'#27ae60'},
+        {label:'No programadas', data: semanas.map(s=>semanasData[s].NOPROG), backgroundColor:'#1a7ccc'},
+        {label:'Programadas', data: semanas.map(s=>semanasData[s].PROG), backgroundColor:'#c0392b'},
+        {label:'% No prog.', data: semanas.map(s=>semanasData[s].NoProg), backgroundColor:'#6c3483', type:"line", borderColor:'#6c3483', fill:false, yAxisID:'y1', tension:0.2, pointRadius:2},
+        {label:'% Cumpl. Prog', data: semanas.map(s=>semanasData[s].Cumpl), backgroundColor:'#2e86c1', type:"line", borderColor:'#2e86c1', fill:false, yAxisID:'y1', tension:0.2, pointRadius:2}
+      ]
+    },
+    options: {
+      responsive:false,
+      plugins: {legend:{display:false}},
+      scales:{
+        y: { beginAtZero:true, title:{display:true, text:'Cantidad'}},
+        y1: { beginAtZero:true, position:'right', grid:{drawOnChartArea:false}}
+      }
+    }
+  });
+}
+function drawSistBar(labels, data) {
+  if(charts['sistBar']) charts['sistBar'].destroy();
+  const canvas = document.getElementById('sistBar');
+  const parent = canvas.parentElement;
+  let [w, h] = getCanvasSize(parent);
+  canvas.width = w; canvas.height = 140;
+  if (!labels.length) { canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+  charts['sistBar'] = new Chart(canvas.getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {label:'BACKLOG', data: labels.map(l=>data[l].BACKLOG), backgroundColor:'#c0392b'},
+        {label:'EJECUTADO', data: labels.map(l=>data[l].EJECUTADO), backgroundColor:'#27ae60'},
+        {label:'FS', data: labels.map(l=>data[l].FS), backgroundColor:'#343a40'}
+      ]
+    },
+    options: {
+      responsive:false,
+      indexAxis:'y',
+      plugins: {legend:{display:false}},
+      scales:{
+        x: { beginAtZero:true, title:{display:false}},
+        y: { title:{display:false}}
+      }
+    }
+  });
+}
+function drawConsumoLine(labels, aceite, grasa) {
+  if(charts['consumoLine']) charts['consumoLine'].destroy();
+  const canvas = document.getElementById('consumoLine');
+  const parent = canvas.parentElement;
+  let [w, h] = getCanvasSize(parent);
+  canvas.width = w; canvas.height = 120;
+  if (!labels.length) { canvas.getContext('2d').clearRect(0,0,w,h); return; }
+  charts['consumoLine'] = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {label:'ACEITE (L)', data: aceite, borderColor:'#27ae60', backgroundColor:'#27ae6033', fill:false, tension:0.2},
+        {label:'GRASA (Kg)', data: grasa, borderColor:'#2578d7', backgroundColor:'#2578d733', fill:false, tension:0.2}
+      ]
+    },
+    options: {
+      responsive:false,
+      plugins: {legend:{position:'top'}},
+      scales:{
+        y: { beginAtZero:true, title:{display:false}},
+        x: { title:{display:false}}
+      }
+    }
+  });
+}
+function resizeCharts() {
+  // Ya no llamamos a updateWidgets aquí para evitar el bucle infinito
+  
+  // Ajustar tamaño de contenedores para evitar desbordamiento
+  document.querySelectorAll('.panel-content').forEach(panel => {
+    // Asegurar que el contenido se ajuste correctamente
+    if (panel.scrollHeight > panel.clientHeight) {
+      panel.style.overflowY = 'auto';
+    }
+  });
+
+  // Redimensionar los gráficos existentes sin recrearlos
+  for (const key in charts) {
+    if (charts[key]) {
+      try {
+        charts[key].resize();
+      } catch (e) {
+        console.log(`Error al redimensionar gráfico ${key}:`, e);
+      }
+    }
+  }
+}
+function resizeChartInPanel(panel) {
+  // Busca el canvas dentro del panel
+  const canvas = panel.querySelector('canvas');
+  if (!canvas) return;
+  // Ajusta el tamaño del canvas al tamaño del área disponible
+  const area = canvas.parentElement;
+  // Usa casi todo el espacio disponible, pero deja un pequeño margen
+  let w = Math.min(area.offsetWidth * 0.98, 1100);
+  let h = Math.min(area.offsetHeight * 0.98, 800);
+  // Si el panel está en zoom, usa más espacio
+  if (panel.classList.contains('zoomed-panel')) {
+    w = Math.max(w, 500);
+    h = Math.max(h, 350);
+  }
+  canvas.width = w;
+  canvas.height = h;
+  // Si existe un chart, redibújalo
+  for (const key in charts) {
+    if (charts[key] && charts[key].canvas === canvas) {
+      charts[key].resize();
+      charts[key].update();
+    }
+  }
+}
+window.addEventListener('resize', function() {
+  // Solo ajustamos tamaños, sin volver a procesar datos
+  setTimeout(() => resizeCharts(), 200);
+});
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(file) parseExcel(file);
+});
+window.onTreeLocChange = onTreeLocChange;
+renderTreeFilter([]);
+updateWidgets([]);  // Corregido: faltaba un paréntesis de cierre
+
+// DRAG & DROP (solo una instancia)
+new Sortable(document.getElementById('dynamicChartsArea'), {
+  animation: 190,
+  handle: '.panel-header',
+  draggable: '.draggable-panel',
+  ghostClass: 'sortable-ghost',
+  chosenClass: 'sortable-chosen',
+  dragClass: 'sortable-drag',
+  forceFallback: true,
+  onStart: function(evt) {
+    // Si el panel está en zoom, cancela el drag
+    if (evt.item.classList.contains('zoomed-panel')) {
+      evt.preventDefault();
+      return false;
+    }
+  },
+  onEnd: function() {
+    setupPanelZoomListeners();
+  }
+});
+
+// --- ZOOM PANEL FUNCTIONALITY ---
+function togglePanelZoom(e) {
+  let panel = e.currentTarget;
+  // Si el evento viene del botón minimizar, panel es el padre
+  if (e.target.classList && e.target.classList.contains('minimize-btn')) {
+    panel = panel.closest('.draggable-panel');
+  }
+  let anyZoomed = document.querySelector('.zoomed-panel');
+  if (!panel.classList.contains('zoomed-panel') && anyZoomed) return;
+  panel.classList.toggle('zoomed-panel');
+  document.body.style.overflow = panel.classList.contains('zoomed-panel') ? 'hidden' : '';
+  // Mostrar/ocultar botón minimizar
+  if (panel.classList.contains('zoomed-panel')) {
+    addMinimizeButton(panel);
+    // Redimensiona el chart al expandir, pero sin actualizar datos
+    setTimeout(() => {
+      resizeChartInPanel(panel);
+      // Ya no llamamos a resizeCharts() que llamaría a updateWidgets
+    }, 180);
+  } else {
+    removeMinimizeButton(panel);
+    setTimeout(() => resizeCharts(), 200); // Solo ajusta tamaños
+  }
+}
+
+function addMinimizeButton(panel) {
+  // Evita duplicados
+  if (panel.querySelector('.minimize-btn')) return;
+  let header = panel.querySelector('.panel-header');
+  if (!header) return;
+  let btn = document.createElement('button');
+  btn.className = 'minimize-btn';
+  btn.title = 'Minimizar';
+  btn.innerHTML = '&times;';
+  btn.onclick = function(ev) {
+    ev.stopPropagation();
+    togglePanelZoom({currentTarget: panel, target: btn});
+  };
+  header.appendChild(btn);
+}
+
+function removeMinimizeButton(panel) {
+  let btn = panel.querySelector('.minimize-btn');
+  if (btn) btn.remove();
+}
+
+// Asigna doble clic a todos los paneles "draggable-panel"
+function setupPanelZoomListeners() {
+  document.querySelectorAll('.draggable-panel').forEach(panel => {
+    panel.ondblclick = togglePanelZoom;
+  });
+}
+setupPanelZoomListeners();
+
+// Asegurar que la funcionalidad de zoom esté habilitada
+window.addEventListener('DOMContentLoaded', function() {
+  setupPanelZoomListeners();
+});
+
+// Modificar window.onload para inicializar el arrastre
+window.addEventListener('load', function() {
+  setupDragAndZoom();
+  
+  // Agregar instrucciones para el usuario
+  setTimeout(() => {
+    let tipDiv = document.createElement('div');
+    tipDiv.style.cssText = "position:fixed;bottom:20px;left:20px;background:#fff;border:2px solid #0d2053;border-radius:8px;padding:10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1000;max-width:300px;";
+    tipDiv.innerHTML = `
+      <p style="margin:0;font-weight:bold;color:#0d2053;">Tip:</p>
+      <ul style="margin:5px 0;padding-left:20px;">
+        <li>Arrastra los paneles por el encabezado para reordenarlos</li>
+        <li>Haz doble clic en cualquier panel para maximizarlo</li>
+      </ul>
+      <button style="padding:4px 8px;background:#0d2053;color:white;border:none;border-radius:4px;cursor:pointer;float:right;">Entendido</button>
+    `;
+    document.body.appendChild(tipDiv);
+    tipDiv.querySelector('button').onclick = () => tipDiv.remove();
+    
+    // Auto-cerrar después de 10 segundos
+    setTimeout(() => {
+      if (document.body.contains(tipDiv)) {
+        tipDiv.remove();
+      }
+    }, 10000);
+  }, 2000);
+});
+</script>
+</body>
+</html>

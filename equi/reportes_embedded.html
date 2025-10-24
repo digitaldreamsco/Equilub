@@ -1,0 +1,98 @@
+<!-- Contenido embebido de PowerBI para el SPA -->
+<div id="powerbi-container" style="height: 100vh; overflow: hidden; position: relative;">
+  <div id="loading-message" style="
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    text-align: center;
+    font-size: 18px;
+    color: #1e3a8a;
+  ">
+    <i class="fa fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 10px;"></i><br>
+    Cargando Dashboard PowerBI...
+  </div>
+  
+  <div id="error-message" style="
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    transform: translate(-50%, -50%); 
+    text-align: center;
+    font-size: 16px;
+    color: #dc2626;
+    display: none;
+  ">
+    <i class="fa fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px;"></i><br>
+    Error al cargar PowerBI Dashboard<br>
+    <button onclick="retryLoad()" style="
+      margin-top: 10px; 
+      padding: 8px 16px; 
+      background: #1e3a8a; 
+      color: white; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer;
+    ">Reintentar</button>
+  </div>
+  
+  <iframe id="powerbi-iframe"
+          src="powerB.html" 
+          style="width: 100%; height: 100%; border: none; display: none;" 
+          frameborder="0"
+          allowfullscreen>
+  </iframe>
+</div>
+
+<script>
+// Script para manejar la carga del PowerBI Dashboard
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Iniciando carga de PowerBI Dashboard en el SPA');
+  
+  const iframe = document.getElementById('powerbi-iframe');
+  const loadingMessage = document.getElementById('loading-message');
+  const errorMessage = document.getElementById('error-message');
+  
+  // Función para reintentar la carga
+  window.retryLoad = function() {
+    errorMessage.style.display = 'none';
+    loadingMessage.style.display = 'block';
+    iframe.style.display = 'none';
+    
+    // Recargar el iframe
+    iframe.src = iframe.src;
+  };
+  
+  // Manejar carga exitosa
+  iframe.onload = function() {
+    console.log('PowerBI iframe cargado exitosamente');
+    loadingMessage.style.display = 'none';
+    errorMessage.style.display = 'none';
+    iframe.style.display = 'block';
+  };
+  
+  // Manejar errores de carga
+  iframe.onerror = function() {
+    console.error('Error al cargar PowerBI iframe');
+    loadingMessage.style.display = 'none';
+    iframe.style.display = 'none';
+    errorMessage.style.display = 'block';
+  };
+  
+  // Timeout para mostrar error si tarda mucho
+  setTimeout(function() {
+    if (loadingMessage.style.display !== 'none') {
+      console.warn('PowerBI iframe tardando mucho en cargar');
+      loadingMessage.innerHTML = '<i class="fa fa-clock" style="font-size: 24px; margin-bottom: 10px;"></i><br>El dashboard está tardando en cargar...<br><small>Esto puede deberse a que es la primera carga</small>';
+    }
+  }, 5000);
+  
+  // Mostrar error definitivo después de más tiempo
+  setTimeout(function() {
+    if (loadingMessage.style.display !== 'none') {
+      loadingMessage.style.display = 'none';
+      errorMessage.style.display = 'block';
+    }
+  }, 15000);
+});
+</script>

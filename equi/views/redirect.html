@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redireccionando...</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0d2053;
+        }
+        .error {
+            color: #c0392b;
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #0d2053;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>¡Atención!</h1>
+        <p class="error">No estás accediendo a través de un servidor web.</p>
+        <p>Para usar este dashboard, debes acceder a través de un servidor web como XAMPP.</p>
+        <p>Por favor, copia estos archivos a la carpeta htdocs de XAMPP y accede a través de:</p>
+        <p><strong>http://localhost/equi/</strong></p>
+        
+        <a href="index.php" class="button">Intentar Acceder Correctamente</a>
+    </div>
+    
+    <script>
+        // Verificar si estamos en un servidor web
+        if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+            // Si estamos en un servidor web, redirigir a powerB.html
+            window.location.href = 'powerB.html';
+        }
+    </script>
+</body>
+</html>

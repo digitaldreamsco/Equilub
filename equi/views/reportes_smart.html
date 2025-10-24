@@ -1,0 +1,236 @@
+<!-- Contenido de PowerBI con redirección inteligente -->
+<div id="powerbi-container" style="height: 100vh; overflow: hidden; position: relative; background: #f7fafc;">
+  
+  <!-- Header de navegación del SPA -->
+  <div style="
+    background: white; 
+    padding: 15px 20px; 
+    border-bottom: 1px solid #e5e7eb; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  ">
+    <h2 style="margin: 0; color: #1e3a8a; font-size: 20px;">
+      <i class="fa fa-chart-line" style="margin-right: 8px;"></i>
+      Reportes PowerBI - Dashboard de Mantenimiento
+    </h2>
+    <div>
+      <button onclick="openPowerBINewTab()" style="
+        padding: 8px 15px; 
+        background: #1e3a8a; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer;
+        margin-right: 10px;
+      ">
+        <i class="fa fa-external-link-alt"></i> Nueva Pestaña
+      </button>
+      <button onclick="loadPowerBIInline()" style="
+        padding: 8px 15px; 
+        background: #059669; 
+        color: white; 
+        border: none; 
+        border-radius: 4px; 
+        cursor: pointer;
+      ">
+        <i class="fa fa-sync"></i> Recargar
+      </button>
+    </div>
+  </div>
+  
+  <!-- Contenido principal -->
+  <div style="padding: 20px;">
+    
+    <!-- Loading state -->
+    <div id="loading-state" style="text-align: center; padding: 60px 20px;">
+      <i class="fa fa-spinner fa-spin" style="font-size: 32px; color: #1e3a8a; margin-bottom: 20px;"></i>
+      <h3 style="color: #1e3a8a; margin: 0 0 10px 0;">Preparando Dashboard PowerBI</h3>
+      <p style="color: #6b7280; margin: 0;">Inicializando componentes...</p>
+    </div>
+    
+    <!-- Options state -->
+    <div id="options-state" style="display: none;">
+      <div style="max-width: 800px; margin: 0 auto;">
+        
+        <!-- Quick access card -->
+        <div style="
+          background: white; 
+          border-radius: 12px; 
+          padding: 30px; 
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+          margin-bottom: 30px;
+          border: 1px solid #e5e7eb;
+        ">
+          <h3 style="color: #1f2937; margin: 0 0 15px 0; font-size: 24px;">
+            <i class="fa fa-rocket" style="color: #1e3a8a; margin-right: 10px;"></i>
+            Acceso Rápido al Dashboard
+          </h3>
+          <p style="color: #6b7280; margin: 0 0 25px 0; font-size: 16px;">
+            Accede al dashboard completo de PowerBI con todas las funcionalidades de mantenimiento y lubricación.
+          </p>
+          
+          <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <button onclick="loadPowerBIFullscreen()" style="
+              padding: 12px 24px; 
+              background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); 
+              color: white; 
+              border: none; 
+              border-radius: 8px; 
+              cursor: pointer;
+              font-size: 16px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            ">
+              <i class="fa fa-expand"></i>
+              Cargar Dashboard Completo
+            </button>
+            
+            <button onclick="openPowerBINewTab()" style="
+              padding: 12px 24px; 
+              background: white; 
+              color: #1e3a8a; 
+              border: 2px solid #1e3a8a; 
+              border-radius: 8px; 
+              cursor: pointer;
+              font-size: 16px;
+              font-weight: 600;
+              display: flex;
+              align-items: center;
+              gap: 8px;
+            ">
+              <i class="fa fa-external-link-alt"></i>
+              Abrir en Nueva Pestaña
+            </button>
+          </div>
+        </div>
+        
+        <!-- Features info -->
+        <div style="
+          background: white; 
+          border-radius: 12px; 
+          padding: 25px; 
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+          border: 1px solid #e5e7eb;
+        ">
+          <h4 style="color: #1f2937; margin: 0 0 20px 0; font-size: 20px;">
+            <i class="fa fa-list-check" style="color: #059669; margin-right: 8px;"></i>
+            Funcionalidades del Dashboard
+          </h4>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa fa-upload" style="color: #1e3a8a; font-size: 20px;"></i>
+              <span style="color: #374151; font-weight: 500;">Subir archivos Excel</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa fa-chart-bar" style="color: #1e3a8a; font-size: 20px;"></i>
+              <span style="color: #374151; font-weight: 500;">Visualización de datos</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa fa-filter" style="color: #1e3a8a; font-size: 20px;"></i>
+              <span style="color: #374151; font-weight: 500;">Filtros por localización</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <i class="fa fa-database" style="color: #1e3a8a; font-size: 20px;"></i>
+              <span style="color: #374151; font-weight: 500;">Gestión de archivos</span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- PowerBI iframe container -->
+    <div id="powerbi-iframe-container" style="display: none; position: relative;">
+      <iframe id="powerbi-iframe" 
+              style="width: 100%; height: calc(100vh - 140px); border: none; border-radius: 8px;" 
+              frameborder="0">
+      </iframe>
+    </div>
+    
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Inicializando vista de PowerBI Reportes');
+  
+  // Mostrar opciones después de un breve delay
+  setTimeout(() => {
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('options-state').style.display = 'block';
+  }, 1000);
+});
+
+function openPowerBINewTab() {
+  const powerBIUrl = window.location.origin + '/equi/powerB.html';
+  console.log('Abriendo PowerBI en nueva pestaña:', powerBIUrl);
+  window.open(powerBIUrl, '_blank');
+}
+
+function loadPowerBIFullscreen() {
+  console.log('Cargando PowerBI en modo completo');
+  
+  // Ocultar opciones
+  document.getElementById('options-state').style.display = 'none';
+  
+  // Mostrar loading
+  const loadingHtml = `
+    <div style="text-align: center; padding: 60px 20px;">
+      <i class="fa fa-spinner fa-spin" style="font-size: 32px; color: #1e3a8a; margin-bottom: 20px;"></i>
+      <h3 style="color: #1e3a8a; margin: 0 0 10px 0;">Cargando Dashboard PowerBI</h3>
+      <p style="color: #6b7280; margin: 0;">Esto puede tardar unos segundos...</p>
+    </div>
+  `;
+  document.getElementById('loading-state').innerHTML = loadingHtml;
+  document.getElementById('loading-state').style.display = 'block';
+  
+  // Cargar iframe
+  const iframe = document.getElementById('powerbi-iframe');
+  const powerBIUrl = window.location.origin + '/equi/powerB.html';
+  
+  iframe.onload = function() {
+    console.log('PowerBI iframe cargado exitosamente');
+    document.getElementById('loading-state').style.display = 'none';
+    document.getElementById('powerbi-iframe-container').style.display = 'block';
+  };
+  
+  iframe.onerror = function() {
+    console.error('Error cargando PowerBI iframe');
+    document.getElementById('loading-state').innerHTML = `
+      <div style="text-align: center; padding: 60px 20px;">
+        <i class="fa fa-exclamation-triangle" style="font-size: 32px; color: #dc2626; margin-bottom: 20px;"></i>
+        <h3 style="color: #dc2626; margin: 0 0 10px 0;">Error al cargar PowerBI</h3>
+        <p style="color: #6b7280; margin: 0 0 20px 0;">No se pudo cargar el dashboard integrado</p>
+        <button onclick="openPowerBINewTab()" style="
+          padding: 10px 20px; 
+          background: #1e3a8a; 
+          color: white; 
+          border: none; 
+          border-radius: 4px; 
+          cursor: pointer;
+        ">Abrir en Nueva Pestaña</button>
+      </div>
+    `;
+  };
+  
+  iframe.src = powerBIUrl;
+}
+
+function loadPowerBIInline() {
+  // Reiniciar la vista
+  document.getElementById('powerbi-iframe-container').style.display = 'none';
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('options-state').style.display = 'block';
+  
+  // Limpiar iframe
+  const iframe = document.getElementById('powerbi-iframe');
+  iframe.src = '';
+}
+</script>
